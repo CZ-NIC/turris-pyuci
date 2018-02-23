@@ -1,5 +1,7 @@
 .*
 *~
 !/.gitignore
+!/.DockerFile
+!/.gitlab-ci.yml
 
 build
