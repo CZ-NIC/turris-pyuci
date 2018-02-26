@@ -195,11 +195,16 @@ static PyObject *pyuci_set(uci_object *self, PyObject *args) {
 		// TODO
 		PyErr_SetNone(PyExc_NotImplementedError);
 		return NULL;
+#if PY_MAJOR_VERSION >= 3
 	} else if (PyUnicode_Check(data)) {
-		PyObject *str_val = PyUnicode_AsUTF8String(data);
-		if (!str_val)
+		ptr.value = PyUnicode_AsUTF8(data);
+#else
+	} else if (PyString_Check(data)) {
+		ptr.value = PyString_AsString(data);
+#endif
+		PyObject_Print(data, stderr, 0);
+		if (!ptr.value)
 			return NULL;
-		ptr.value = PyByteArray_AsString(str_val);
 		if (uci_set(self->ctx, &ptr))
 			return pyuci_error(self, UciException);
 	} else {
