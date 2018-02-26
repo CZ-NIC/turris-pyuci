@@ -8,7 +8,7 @@ setup(
     author_email='karel.koci@nic.cz',
     description='Python Uci bindings',
     long_description='Python Unified Configuration Interface bimndings.',
-    license="GPLv3",
+    license="MIT",
 
     ext_modules=[
         Extension("uci", ["ucimodule.c", "pyuci.c"], libraries=["uci"])
