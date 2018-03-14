@@ -11,6 +11,6 @@ setup(
     license="MIT",
 
     ext_modules=[
-        Extension("uci", ["ucimodule.c", "pyuci.c"], libraries=["uci"])
+        Extension("uci", ["ucimodule.c", "pyuci.c", "pyhelper.c"], libraries=["uci"])
         ],
     )

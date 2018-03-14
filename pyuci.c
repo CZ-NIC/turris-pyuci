@@ -19,6 +19,7 @@
 #include "pyuci.h"
 #include <uci.h>
 #include <stdio.h>
+#include "pyhelper.h"
 
 // Uci exceptions
 static PyObject *UciException;
@@ -191,18 +192,17 @@ static PyObject *pyuci_set(uci_object *self, PyObject *args) {
 
 	uci_lookup_ptr(self->ctx, &ptr, NULL, true);
 
-	if (PySet_Check(data)) {
-		// TODO
-		PyErr_SetNone(PyExc_NotImplementedError);
-		return NULL;
-#if PY_MAJOR_VERSION >= 3
-	} else if (PyUnicode_Check(data)) {
-		ptr.value = PyUnicode_AsUTF8(data);
-#else
-	} else if (PyString_Check(data)) {
-		ptr.value = PyString_AsString(data);
-#endif
-		PyObject_Print(data, stderr, 0);
+	if (is_pytable(data)) {
+		uci_delete(self->ctx, &ptr);
+		int i;
+		for (i = 0; i < pytable_size(data); i++) {
+			if (!(ptr.value = pytable_string(data, i)))
+				return NULL;
+			if (uci_add_list(self->ctx, &ptr))
+				return pyuci_error(self, UciException);
+		}
+	} else if (is_pystring(data)) {
+		ptr.value = pystring(data);
 		if (!ptr.value)
 			return NULL;
 		if (uci_set(self->ctx, &ptr))
