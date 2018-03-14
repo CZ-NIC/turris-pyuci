@@ -137,8 +137,7 @@ static bool lookup_ptr(uci_object *self, PyObject *args, struct uci_ptr *ptr) {
 	return true;
 }
 
-static PyObject *pyuci_get(uci_object *self, PyObject *args) {
-	// TODO add support for listing all (see section type)
+static PyObject *pyuci_get_common(uci_object *self, PyObject *args, bool all) {
 	struct uci_ptr ptr;
 
 	if (!lookup_ptr(self, args, &ptr))
@@ -154,8 +153,10 @@ static PyObject *pyuci_get(uci_object *self, PyObject *args) {
 		case UCI_TYPE_PACKAGE:
 			return pyuci_package(ptr.p);
 		case UCI_TYPE_SECTION:
-			// TODO for all push section from ptr.s
-			return Py_BuildValue("s", ptr.s->type);
+			if (all)
+				return pyuci_section(ptr.s);
+			else
+				return Py_BuildValue("s", ptr.s->type);
 		case UCI_TYPE_OPTION:
 			return pyuci_option(ptr.o);
 	default:
@@ -166,6 +167,14 @@ static PyObject *pyuci_get(uci_object *self, PyObject *args) {
 			return NULL;
 		}
 	}
+}
+
+static PyObject *pyuci_get(uci_object *self, PyObject *args) {
+	return pyuci_get_common(self, args, false);
+}
+
+static PyObject *pyuci_get_all(uci_object *self, PyObject *args) {
+	return pyuci_get_common(self, args, true);
 }
 
 static PyObject *pyuci_set(uci_object *self, PyObject *args) {
@@ -396,6 +405,7 @@ static PyObject *pyuci_set_savedir(uci_object *self, PyObject *args) {
 
 static PyMethodDef uci_methods[] = {
 	{"get", (PyCFunction)pyuci_get, METH_VARARGS, "Get value"},
+	{"get_all", (PyCFunction)pyuci_get_all, METH_VARARGS, "Get all values even for sections"},
 	{"set", (PyCFunction)pyuci_set, METH_VARARGS, "Set value"},
 	{"delete", (PyCFunction)pyuci_delete, METH_VARARGS, "Delete option"},
 	{"add", (PyCFunction)pyuci_add, METH_VARARGS, "Add new anonymous section"},
