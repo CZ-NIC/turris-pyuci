@@ -64,8 +64,20 @@ static PyObject *pyuci_enter(uci_object *self, PyObject *args) {
 }
 
 static PyObject *pyuci_exit(uci_object *self, PyObject *args) {
-	if (self->ctx)
+	if (self->ctx) {
+		// Commit all changes
+		struct uci_ptr ptr;
+		memset(&ptr, 0, sizeof ptr);
+		struct uci_element *e, *tmp;
+		uci_foreach_element_safe(&self->ctx->root, tmp, e) {
+			struct uci_package *p = uci_to_package(e);
+			if (ptr.p && (ptr.p != p))
+				continue;
+			ptr.p = p;
+			uci_commit(self->ctx, &p, false);
+		}
 		uci_free_context(self->ctx);
+	}
 	self->ctx = NULL;
 	Py_RETURN_NONE;
 }

@@ -177,3 +177,17 @@ config testing 'testing'
     with uci.Uci(confdir=tmpdir.strpath) as u:
         assert u.get('test', 'testing', 'one') == '0'
         assert u.get('test', 'testing', 'two') == '1'
+
+
+def test_context_commit(tmpdir):
+    """Test that when we leave context that we commit. This depends on working
+    test_set.
+    """
+    tmpdir.join('test').write("")
+    with uci.Uci(confdir=tmpdir.strpath) as u:
+        u.set('test', 'testing', 'testing')
+        u.set('test', 'testing', 'one', '0')
+        u.set('test', 'testing', 'two', '1')
+    with uci.Uci(confdir=tmpdir.strpath) as u:
+        assert u.get('test', 'testing', 'one') == '0'
+        assert u.get('test', 'testing', 'two') == '1'
