@@ -55,6 +55,21 @@ static int uci_init(uci_object *self, PyObject *args, PyObject *kwds) {
 	return 0;
 }
 
+static PyObject *pyuci_enter(uci_object *self, PyObject *args) {
+	if (!self->ctx) {
+		PyErr_SetString(UciException, "Entering with non-initialized object is invalid");
+		return NULL;
+	}
+	return (PyObject*)self;
+}
+
+static PyObject *pyuci_exit(uci_object *self, PyObject *args) {
+	if (self->ctx)
+		uci_free_context(self->ctx);
+	self->ctx = NULL;
+	Py_RETURN_NONE;
+}
+
 // TODO do we need this?
 static PyObject *pyuci_error(uci_object *self, PyObject *excp) {
 	char *str = NULL;
@@ -404,6 +419,8 @@ static PyObject *pyuci_set_savedir(uci_object *self, PyObject *args) {
 }
 
 static PyMethodDef uci_methods[] = {
+	{"__enter__", (PyCFunction)pyuci_enter, METH_VARARGS, "Enter context"},
+	{"__exit__", (PyCFunction)pyuci_exit, METH_VARARGS, "Exit context"},
 	{"get", (PyCFunction)pyuci_get, METH_VARARGS, "Get value"},
 	{"get_all", (PyCFunction)pyuci_get_all, METH_VARARGS, "Get all values even for sections"},
 	{"set", (PyCFunction)pyuci_set, METH_VARARGS, "Set value"},
@@ -423,7 +440,6 @@ static PyMethodDef uci_methods[] = {
 	{"savedir", (PyCFunction)pyuci_savedir, METH_VARARGS, "Returns current savedir"},
 	{"set_savedir", (PyCFunction)pyuci_set_savedir, METH_VARARGS, "Change used savedir"},
 	// TODO somehow allow iteration
-	// TODO add __enter__ and __exit__ methods for context manager support
 	{NULL}
 };
 

@@ -165,3 +165,15 @@ def test_list_configs(tmpdir):
     tmpdir.join('deploy').write("")
     u = uci.Uci(confdir=tmpdir.strpath)
     assert u.list_configs() == ['deploy', 'test']
+
+
+def test_context(tmpdir):
+    'Test context with Uci. This depends on working test_get.'
+    tmpdir.join('test').write("""
+config testing 'testing'
+    option one '0'
+    option two '1'
+""")
+    with uci.Uci(confdir=tmpdir.strpath) as u:
+        assert u.get('test', 'testing', 'one') == '0'
+        assert u.get('test', 'testing', 'two') == '1'
