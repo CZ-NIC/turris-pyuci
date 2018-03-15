@@ -79,12 +79,12 @@ config testing 'testing'
     u = uci.Uci(confdir=tmpdir.strpath)
     u.delete('test', 'testing', 'one')
     assert u.get('test', 'testing', 'two') == '1'
-    with pytest.raises(uci.UciExcNotFound):
+    with pytest.raises(uci.UciExceptionNotFound):
         u.get('test', 'testing', 'one')
     u.delete('test', 'testing')
-    with pytest.raises(uci.UciExcNotFound):
+    with pytest.raises(uci.UciExceptionNotFound):
         u.get('test', 'testing', 'two')
-    with pytest.raises(uci.UciExcNotFound):
+    with pytest.raises(uci.UciExceptionNotFound):
         u.get('test', 'testing')
 
 
@@ -97,13 +97,13 @@ config testing 'testing'
 """)
     u = uci.Uci(confdir=tmpdir.strpath)
     u.rename('test', 'testing', 'one', 'three')
-    with pytest.raises(uci.UciExcNotFound):
+    with pytest.raises(uci.UciExceptionNotFound):
         u.get('test', 'testing', 'one')
     assert u.get('test', 'testing', 'three') == '0'
     u.rename('test', 'testing', 'deploy')
-    with pytest.raises(uci.UciExcNotFound):
+    with pytest.raises(uci.UciExceptionNotFound):
         u.get('test', 'testing', 'three')
-    with pytest.raises(uci.UciExcNotFound):
+    with pytest.raises(uci.UciExceptionNotFound):
         u.get('test', 'testing', 'two')
     assert u.get('test', 'deploy', 'three') == '0'
     assert u.get('test', 'deploy', 'two') == '1'
@@ -155,7 +155,7 @@ def test_revert(tmpdir):
     u.set('test', 'testing', 'variable', 'value')
     assert u.get('test', 'testing', 'variable') == 'value'
     u.revert('test')
-    with pytest.raises(uci.UciExcNotFound):
+    with pytest.raises(uci.UciExceptionNotFound):
         u.get('test', 'testing', 'variable')
 
 

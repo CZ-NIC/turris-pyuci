@@ -488,7 +488,7 @@ bool pyuci_object_init(PyObject *module) {
 
 	UciExcNotFound = PyErr_NewException("uci.UciExceptionNotFound", UciException, NULL);
 	Py_INCREF(UciExcNotFound);
-	PyModule_AddObject(module, "UciExcNotFound", UciExcNotFound);
+	PyModule_AddObject(module, "UciExceptionNotFound", UciExcNotFound);
 
 	return true;
 }
