@@ -1,5 +1,13 @@
+import os
 from setuptools import setup
 from setuptools.extension import Extension
+
+ext_compile_args = None
+ext_link_args = None
+
+if 'COVERAGE' in os.environ:
+    ext_compile_args = ["-fprofile-arcs", "-ftest-coverage"]
+    ext_link_args = ["-fprofile-arcs"]
 
 setup(
     name='pyuci',
@@ -11,6 +19,9 @@ setup(
     license="MIT",
 
     ext_modules=[
-        Extension("uci", ["ucimodule.c", "pyuci.c", "pyhelper.c"], libraries=["uci"])
+        Extension("uci", ["ucimodule.c", "pyuci.c", "pyhelper.c"],
+                  libraries=["uci"], language="c",
+                  extra_compile_args=ext_compile_args,
+                  extra_link_args=ext_link_args)
         ],
     )
