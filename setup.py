@@ -11,13 +11,14 @@ if 'COVERAGE' in os.environ:
 
 setup(
     name='pyuci',
-    version='0.3',
+    version='0.4',
     author='CZ.NIC z.s.p.o',
     author_email='karel.koci@nic.cz',
     description='Python Uci bindings',
     long_description='Python Unified Configuration Interface bimndings.',
     license="MIT",
 
+    packages=['euci'],
     ext_modules=[
         Extension("uci", ["ucimodule.c", "pyuci.c", "pyhelper.c"],
                   libraries=["uci"], language="c",
