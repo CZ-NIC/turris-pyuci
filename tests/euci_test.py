@@ -88,3 +88,15 @@ config testing 'testing'
     u.set_integer('test', 'testing', 'minus', -42)
     assert u.get('test', 'testing', 'plus') == '42'
     assert u.get('test', 'testing', 'minus') == '-42'
+
+
+def test_context(tmpdir):
+    'Test context with EUci'
+    tmpdir.join('test').write("""
+config testing 'testing'
+    option one '0'
+    option two '1'
+""")
+    with euci.EUci(confdir=tmpdir.strpath) as u:
+        assert not u.get_boolean('test', 'testing', 'one')
+        assert u.get_boolean('test', 'testing', 'two')
