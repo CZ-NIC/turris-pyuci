@@ -44,7 +44,7 @@ class EUci(Uci):
     __BOOLEAN_FALSE = "0"
 
     def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
+        super(EUci, self).__init__(*args, **kwargs)
 
     def get_boolean(self, *args):
         """Returns given UCI config as a boolean.
@@ -60,7 +60,9 @@ class EUci(Uci):
     def set_boolean(self, *args):
         """Sets boolean value to given UCI config.
         """
-        self.set(*(args[:-1]), self.__BOOLEAN_TRUE if args[-1] else self.__BOOLEAN_FALSE)
+        nargs = list(args)
+        nargs[-1] = self.__BOOLEAN_TRUE if nargs[-1] else self.__BOOLEAN_FALSE
+        self.set(*nargs)
 
     def get_integer(self, *args):
         """Returns given UCI config as an integer.
@@ -71,4 +73,6 @@ class EUci(Uci):
     def set_integer(self, *args):
         """Sets integer to given UCI config.
         """
-        self.set(*(args[:-1]), str(args[-1]))
+        nargs = list(args)
+        nargs[-1] = str(nargs[-1])
+        self.set(*nargs)
