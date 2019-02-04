@@ -4,7 +4,15 @@ stages:
   - test
   - pages
 
-pytest:
+python2:
+  stage: test
+  before_script:
+    - pip install .
+    - export LD_LIBRARY_PATH=/usr/local/lib
+  script:
+    - python -m pytest tests
+
+python3:
   stage: test
   before_script:
     - pip3 install .
