@@ -29,6 +29,7 @@ static PyObject *UciExcNotFound;
 typedef struct {
 	PyObject_HEAD
 	struct uci_context *ctx;
+	bool tainted;
 } uci_object;
 
 static void uci_dealloc(uci_object *self) {
@@ -39,6 +40,7 @@ static void uci_dealloc(uci_object *self) {
 static int uci_init(uci_object *self, PyObject *args, PyObject *kwds) {
 	if (self->ctx) // reinitialization so first free previous one
 		uci_free_context(self->ctx);
+	self->tainted = false;
 	self->ctx = uci_alloc_context();
 	if (self->ctx == NULL) {
 		PyErr_SetString(UciException, "Cannot allocate uci context.");
@@ -63,26 +65,29 @@ static PyObject *pyuci_enter(uci_object *self, PyObject *args) {
 	return (PyObject*)self;
 }
 
+static void commit_all(struct uci_context *ctx) {
+	struct uci_ptr ptr;
+	memset(&ptr, 0, sizeof ptr);
+	struct uci_element *e, *tmp;
+	uci_foreach_element_safe(&ctx->root, tmp, e) {
+		struct uci_package *p = uci_to_package(e);
+		if (ptr.p && (ptr.p != p))
+			continue;
+		ptr.p = p;
+		uci_commit(ctx, &p, false);
+	}
+}
+
 static PyObject *pyuci_exit(uci_object *self, PyObject *args) {
 	if (self->ctx) {
-		// Commit all changes
-		struct uci_ptr ptr;
-		memset(&ptr, 0, sizeof ptr);
-		struct uci_element *e, *tmp;
-		uci_foreach_element_safe(&self->ctx->root, tmp, e) {
-			struct uci_package *p = uci_to_package(e);
-			if (ptr.p && (ptr.p != p))
-				continue;
-			ptr.p = p;
-			uci_commit(self->ctx, &p, false);
-		}
+		if (self->tainted)
+			commit_all(self->ctx);
 		uci_free_context(self->ctx);
 	}
 	self->ctx = NULL;
 	Py_RETURN_NONE;
 }
 
-// TODO do we need this?
 static PyObject *pyuci_error(uci_object *self, PyObject *excp) {
 	char *str = NULL;
 	uci_get_errorstr(self->ctx, &str, NULL);
@@ -247,6 +252,7 @@ static PyObject *pyuci_set(uci_object *self, PyObject *args) {
 		PyErr_SetString(UciException, "Unsupported value passed to uci.set()");
 		return NULL;
 	}
+	self->tainted = true;
 
 	Py_RETURN_NONE;
 }
@@ -257,6 +263,7 @@ static PyObject *pyuci_delete(uci_object *self, PyObject *args) {
 		return NULL;
 
 	uci_delete(self->ctx, &ptr);
+	self->tainted = true;
 
 	Py_RETURN_NONE;
 }
@@ -264,6 +271,7 @@ static PyObject *pyuci_delete(uci_object *self, PyObject *args) {
 static PyObject *pyuci_add(uci_object *self, PyObject *args) {
 	// TODO we need findpkg
 	PyErr_SetNone(PyExc_NotImplementedError);
+	self->tainted = true;
 	return NULL;
 }
 
@@ -299,6 +307,7 @@ static PyObject *pyuci_rename(uci_object *self, PyObject *args) {
 
 	if(uci_rename(self->ctx, &ptr))
 		return pyuci_error(self, UciException);
+	self->tainted = true;
 
 	Py_RETURN_NONE;
 }
@@ -323,6 +332,7 @@ static PyObject *pyuci_reorder(uci_object *self, PyObject *args) {
 
 	if(uci_reorder_section(self->ctx, ptr.s, pos))
 		return pyuci_error(self, UciException);
+	self->tainted = true;
 
 	Py_RETURN_NONE;
 }
@@ -356,6 +366,7 @@ static PyObject *package_cmd(uci_object *self, PyObject *args, enum pkg_cmd cmd)
 			break;
 		}
 	}
+	self->tainted = false;
 	Py_RETURN_NONE;
 }
 
