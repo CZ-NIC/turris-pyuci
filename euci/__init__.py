@@ -22,7 +22,7 @@
 # LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
 # NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE,
 # EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-from uci import Uci
+from uci import Uci, UciExceptionNotFound
 
 
 class EUci(Uci):
@@ -46,6 +46,15 @@ class EUci(Uci):
     def __init__(self, *args, **kwargs):
         super(EUci, self).__init__(*args, **kwargs)
 
+    def get_default(self, *args, default=None):
+        """Wrap UCI get method with additional check for missing config value.
+        Returns default value if config value cannot be found.
+        """
+        try:
+            return self.get(*args)
+        except UciExceptionNotFound:
+            return default
+
     def get_boolean(self, *args):
         """Returns given UCI config as a boolean.
         Value '0', 'no', 'off', 'false' or 'disabled' is returned as False.
@@ -53,9 +62,21 @@ class EUci(Uci):
         ValueError is raised on any other value.
         """
         value = self.get(*args)
-        if value.lower() in self.__BOOLEAN_VALUES:
-            return self.__BOOLEAN_VALUES[value.lower()]
-        raise ValueError
+        if value.lower() not in self.__BOOLEAN_VALUES:
+            raise ValueError
+        return self.__BOOLEAN_VALUES[value.lower()]
+
+    def get_boolean_default(self, *args, default=False):
+        """Returns given UCI config as a boolean.
+        Value '0', 'no', 'off', 'false' or 'disabled' is returned as False.
+        Value '1' , 'yes', 'on', 'true' or 'enabled' is returned as True.
+        ValueError is raised on any other value.
+        Returns default value as bool if config value cannot be found.
+        """
+        try:
+            return self.get_boolean(*args)
+        except UciExceptionNotFound:
+            return bool(default)
 
     def set_boolean(self, *args):
         """Sets boolean value to given UCI config.
@@ -69,6 +90,16 @@ class EUci(Uci):
         Raises ValueError if config value can't be converted to int.
         """
         return int(self.get(*args))
+
+    def get_integer_default(self, *args, default=0):
+        """Returns given UCI config as an integer.
+        Raises ValueError if config value can't be converted to int.
+        Returns default value as int if config value cannot be found.
+        """
+        try:
+            return self.get_integer(*args)
+        except UciExceptionNotFound:
+            return int(default)
 
     def set_integer(self, *args):
         """Sets integer to given UCI config.
