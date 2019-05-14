@@ -242,8 +242,8 @@ static PyObject *pyuci_set(uci_object *self, PyObject *args) {
 			if (uci_add_list(self->ctx, &ptr))
 				return pyuci_error(self, UciException);
 		}
-	} else if (is_pystring(data)) {
-		ptr.value = pystring(data);
+	} else if (PyUnicode_Check(data)) {
+		ptr.value = PyUnicode_AsUTF8(data);
 		if (!ptr.value)
 			return NULL;
 		if (uci_set(self->ctx, &ptr))

@@ -25,9 +25,6 @@ static PyMethodDef module_methods[] = {
 	{NULL, NULL, 0, NULL}
 };
 
-
-#if PY_MAJOR_VERSION >= 3
-
 static struct PyModuleDef moduledef = {
 	PyModuleDef_HEAD_INIT,
 	"uci",
@@ -37,34 +34,17 @@ static struct PyModuleDef moduledef = {
 	NULL, NULL, NULL, NULL
 };
 
-#define RETURN_ERROR return NULL
 
-#else
-
-#define RETURN_ERROR return
-
-#endif
-
-#if PY_MAJOR_VERSION >= 3
 PyMODINIT_FUNC PyInit_uci(void) {
-#else
-PyMODINIT_FUNC inituci(void) {
-#endif
 	PyObject *m;
 
-#if PY_MAJOR_VERSION >= 3
 	m = PyModule_Create(&moduledef);
-#else
-	m = Py_InitModule("uci", module_methods);
-#endif
 	if (m == NULL)
-		RETURN_ERROR;
+		return NULL;
 
 	// Add Uci type to module
 	if (!pyuci_object_init(m))
-		RETURN_ERROR;
+		return NULL;
 
-#if PY_MAJOR_VERSION >= 3
 	return m;
-#endif
 }

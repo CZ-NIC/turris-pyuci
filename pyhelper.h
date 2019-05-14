@@ -22,10 +22,6 @@
 #include <Python.h>
 #include <stdbool.h>
 
-// Stupid helper functions for getting string from python str object
-bool is_pystring(PyObject *pystr);
-const char *pystring(PyObject *pystr);
-
 // Functions for accessing both Lists and Tuples.
 bool is_pytable(PyObject *pyobj);
 Py_ssize_t pytable_size(PyObject *pyobj);

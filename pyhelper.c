@@ -1,21 +1,5 @@
 #include "pyhelper.h"
 
-bool is_pystring(PyObject *pystr) {
-#if PY_MAJOR_VERSION >= 3
-	return PyUnicode_Check(pystr);
-#else
-	return PyString_Check(pystr);
-#endif
-}
-
-const char *pystring(PyObject *pystr) {
-#if PY_MAJOR_VERSION >= 3
-	return PyUnicode_AsUTF8(pystr);
-#else
-	return PyString_AsString(pystr);
-#endif
-}
-
 bool is_pytable(PyObject *pyobj) {
 	return PyList_Check(pyobj) || PyTuple_Check(pyobj);
 }
@@ -40,5 +24,5 @@ const char *pytable_string(PyObject *pyobj, int index) {
 
 	if (!str)
 		return NULL;
-	return pystring(str);
+	return PyUnicode_AsUTF8(str);
 }
