@@ -46,27 +46,27 @@ class EUci(Uci):
     def __init__(self, *args, **kwargs):
         super(EUci, self).__init__(*args, **kwargs)
 
-    def get_default(self, *args, default=None):
+    def get_default(self, *args, default=None, **kwargs):
         """Wrap UCI get method with additional check for missing config value.
         Returns default value if config value cannot be found.
         """
         try:
-            return self.get(*args)
+            return self.get(*args, **kwargs)
         except UciExceptionNotFound:
             return default
 
-    def get_boolean(self, *args):
+    def get_boolean(self, *args, **kwargs):
         """Returns given UCI config as a boolean.
         Value '0', 'no', 'off', 'false' or 'disabled' is returned as False.
         Value '1' , 'yes', 'on', 'true' or 'enabled' is returned as True.
         ValueError is raised on any other value.
         """
-        value = self.get(*args)
+        value = self.get(*args, **kwargs)
         if value.lower() not in self.__BOOLEAN_VALUES:
             raise ValueError
         return self.__BOOLEAN_VALUES[value.lower()]
 
-    def get_boolean_default(self, *args, default=False):
+    def get_boolean_default(self, *args, default=False, **kwargs):
         """Returns given UCI config as a boolean.
         Value '0', 'no', 'off', 'false' or 'disabled' is returned as False.
         Value '1' , 'yes', 'on', 'true' or 'enabled' is returned as True.
@@ -74,7 +74,7 @@ class EUci(Uci):
         Returns default value as bool if config value cannot be found.
         """
         try:
-            return self.get_boolean(*args)
+            return self.get_boolean(*args, **kwargs)
         except UciExceptionNotFound:
             return bool(default)
 
@@ -85,19 +85,19 @@ class EUci(Uci):
         nargs[-1] = self.__BOOLEAN_TRUE if nargs[-1] else self.__BOOLEAN_FALSE
         self.set(*nargs)
 
-    def get_integer(self, *args):
+    def get_integer(self, *args, **kwargs):
         """Returns given UCI config as an integer.
         Raises ValueError if config value can't be converted to int.
         """
-        return int(self.get(*args))
+        return int(self.get(*args, **kwargs))
 
-    def get_integer_default(self, *args, default=0):
+    def get_integer_default(self, *args, default=0, **kwargs):
         """Returns given UCI config as an integer.
         Raises ValueError if config value can't be converted to int.
         Returns default value as int if config value cannot be found.
         """
         try:
-            return self.get_integer(*args)
+            return self.get_integer(*args, **kwargs)
         except UciExceptionNotFound:
             return int(default)
 
