@@ -43,8 +43,55 @@ class EUci(Uci):
     __BOOLEAN_TRUE = "1"
     __BOOLEAN_FALSE = "0"
 
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
+    def get(self, *args, **kwargs):
+        """Get configuration value.
+
+        Up to three positional arguments are expected. Those are uci "config"
+        "section" and "option" in this order.
+
+        Following additional optional keywords arguments are available:
+        dtype: data type to be returned. Currently supported are: str, bool and
+            int. If you don't specify this then it defaults to str. If value
+            cannot be converted to specified type then it raises ValueError.
+
+        When requested value is not found then this raises UciExceptionNotFound.
+        """
+        dtype = kwargs.get('dtype', str)
+        value = super().get(*args)
+        if dtype == str:
+            return value
+        if dtype == bool:
+            value = value.lower()
+            if value not in self.__BOOLEAN_VALUES:
+                raise ValueError
+            return self.__BOOLEAN_VALUES[value]
+        if dtype == int:
+            return int(value)
+        raise EUciExceptionUnsupportedType(dtype)
+
+    def set(self, *args, **kwargs):
+        """Set configuration value.
+
+        Up to three positional arguments specifying configuration can be
+        specified. Those are "config", "section" and "option". Option does not
+        have to be specified and in such case section value is set. Last
+        positional argument (third or fourth one) is value to be set. This
+        function automatically detect that argument type and sets value
+        according to that. Supported types are: str, bool and int.
+        If provided value is not of any of these types then it is converted to
+        string.
+
+        It is suggested to always explicitly type last positional argument to
+        ensure correct type. That is in case of boolean for example:
+        set("foo", "fee", "faa", bool(value))
+        """
+        dtype = type(args[-1])
+        if dtype == bool:
+            value = self.__BOOLEAN_TRUE if args[-1] else self.__BOOLEAN_FALSE
+        else:
+            # This implements handler for str and int type as well as fallback
+            value = str(args[-1])
+        super().set(*args[:-1], value)
 
     def get_default(self, *args, default=None, **kwargs):
         """Wrap UCI get method with additional check for missing config value.
@@ -56,15 +103,13 @@ class EUci(Uci):
             return default
 
     def get_boolean(self, *args, **kwargs):
-        """Returns given UCI config as a boolean.
+        """This is obsolete! Please use instead: set(config, section, option, dtype=bool)
+        Returns given UCI config as a boolean.
         Value '0', 'no', 'off', 'false' or 'disabled' is returned as False.
         Value '1' , 'yes', 'on', 'true' or 'enabled' is returned as True.
         ValueError is raised on any other value.
         """
-        value = self.get(*args, **kwargs)
-        if value.lower() not in self.__BOOLEAN_VALUES:
-            raise ValueError
-        return self.__BOOLEAN_VALUES[value.lower()]
+        return self.get(*args, dtype=bool, **kwargs)
 
     def get_boolean_default(self, *args, default=False, **kwargs):
         """Returns given UCI config as a boolean.
@@ -79,15 +124,17 @@ class EUci(Uci):
             return bool(default)
 
     def set_boolean(self, *args):
-        """Sets boolean value to given UCI config.
+        """This is obsolete! Please use instead: set(config, section, option, value, bool(value))
+        Sets boolean value to given UCI config.
         """
-        self.set(*args[:-1], self.__BOOLEAN_TRUE if args[-1] else self.__BOOLEAN_FALSE)
+        self.set(*args[:-1], bool(args[-1]))
 
     def get_integer(self, *args, **kwargs):
-        """Returns given UCI config as an integer.
+        """This is obsolete! Please use instead: set(config, section, option, dtype=int)
+        Returns given UCI config as an integer.
         Raises ValueError if config value can't be converted to int.
         """
-        return int(self.get(*args, **kwargs))
+        return self.get(*args, dtype=int, **kwargs)
 
     def get_integer_default(self, *args, default=0, **kwargs):
         """Returns given UCI config as an integer.
@@ -100,45 +147,10 @@ class EUci(Uci):
             return int(default)
 
     def set_integer(self, *args):
-        """Sets integer to given UCI config.
+        """This is obsolete! Please use instead: set(config, section, option, value, int(value))
+        Sets integer to given UCI config.
         """
-        self.set(*args[:-1], str(args[-1]))
-
-    def get_t(self, dtype, *args, **kwargs):
-        """Returns given UCI config typed as Python type in dtype.
-        This is wrapper on top of other EUci get_* methods. Note that this is
-        not magic. It only provides you with convinient way to use Python type
-        to call specific get_* method.
-        Returns value of requested type.
-        All exceptions it can raise depends on requested type but it also
-        raises one additional exception: EUciExceptionUnsupportedType
-        """
-        tpmethods = {
-            str: self.get,
-            bool: self.get_boolean,
-            int: self.get_integer,
-        }
-        if dtype not in tpmethods:
-            raise EUciExceptionUnsupportedType(dtype)
-        return tpmethods[dtype](*args, **kwargs)
-
-    def set_t(self, *args, **kwargs):
-        """Sets given value to given UCI config while detecting type.
-        Only supported types are those supported by set_* methods. If provided
-        value has type which is not supported or recognized then it is
-        converted to string. To ensure that you are setting correct type you
-        should always type it with call. That is for example:
-        set_t("foo", "fee", "faa", bool(value))
-        """
-        tpmethods = {
-            bool: self.set_boolean,
-            int: self.set_integer,
-        }
-        dtype = type(args[-1])
-        if dtype in tpmethods:
-            tpmethods[dtype](*args, **kwargs)
-        else:
-            self.set(*args[:-1], str(args[-1]), **kwargs)
+        self.set(*args[:-1], int(args[-1]))
 
 
 class EUciException(UciException):
