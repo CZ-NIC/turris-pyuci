@@ -70,13 +70,19 @@ class EUci(Uci):
         dtype: data type to be returned. Currently supported are: str, bool and
             int. If you don't specify this then it defaults to str. If value
             cannot be converted to specified type then it raises ValueError.
+        list: bool setting if option is expected to be list. This ensures that
+            this method always returns tuple or on the other hand never
+            returns one.
         default: default value to be returned instead of raising
             UciExceptionNotFound.
+
+        Note that dtype and list are considered only if at least "section" is
+        provided.
 
         When requested value is not found then this raises UciExceptionNotFound.
         ValueError is raised in case of value that can't be converted to dtype.
         """
-        kwdiff = set(kwargs).difference({'default'})
+        kwdiff = set(kwargs).difference({'default', 'list'})
         if kwdiff:
             raise TypeError("'{}' is an invalid keyword argument for this function".format(kwdiff))
 
@@ -91,8 +97,16 @@ class EUci(Uci):
             return values
 
         if type(values) == tuple:
-            return tuple((self._get(str(value), dtype) for value in values))
-        return self._get(str(values), dtype)
+            result = tuple((self._get(str(value), dtype) for value in values))
+        else:
+            result = self._get(str(values), dtype)
+        if 'list' in kwargs:
+            if (type(result) == tuple) == bool(kwargs['list']):
+                return result
+            if kwargs['list']:
+                return (result,)
+            return result[0]
+        return result
 
     def _set_value(self, value, dtype):
         if dtype == bool:

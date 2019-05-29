@@ -157,3 +157,18 @@ config testing 'testing'
     with euci.EUci(confdir=tmpdir.strpath) as u:
         assert not u.get('test', 'testing', 'one', dtype=bool)
         assert u.get('test', 'testing', 'two', dtype=bool)
+
+
+def test_get_list(tmpdir):
+    'Test get with list'
+    tmpdir.join('test').write("""
+config testing 'testing'
+    option option '0'
+    list list '0'
+    list list '1'
+""")
+    u = euci.EUci(confdir=tmpdir.strpath)
+    assert u.get('test', 'testing', 'option', dtype=bool, list=True) == (False,)
+    assert not u.get('test', 'testing', 'option', dtype=bool, list=False)
+    assert u.get('test', 'testing', 'list', dtype=bool, list=True) == (False, True)
+    assert not u.get('test', 'testing', 'list', dtype=bool, list=False)
