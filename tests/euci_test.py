@@ -110,6 +110,21 @@ config testing 'testing'
     assert u.get('test', 'testing', 'minus') == '-42'
 
 
+def test_get_default(tmpdir):
+    'Test get method with default value'
+    tmpdir.join('test').write("""
+config testing 'testing'
+""")
+    u = euci.EUci(confdir=tmpdir.strpath)
+    with pytest.raises(euci.UciExceptionNotFound):
+        u.get('test', 'str', 'foo')
+    assert u.get('test', 'str', 'foo', default='value') == 'value'
+    assert u.get('test', 'str', 'foo', dtype=bool, default='true')
+    assert u.get('test', 'str', 'foo', dtype=bool, default=True)
+    assert u.get('test', 'str', 'foo', dtype=int, default=-42) == -42
+    assert u.get('test', 'str', 'foo', dtype=int, default='-42') == -42
+
+
 def test_context(tmpdir):
     'Test context with EUci'
     tmpdir.join('test').write("""

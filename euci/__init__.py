@@ -43,7 +43,7 @@ class EUci(Uci):
     __BOOLEAN_TRUE = "1"
     __BOOLEAN_FALSE = "0"
 
-    def get(self, *args, **kwargs):
+    def get(self, *args, dtype=str, **kwargs):
         """Get configuration value.
 
         Up to three positional arguments are expected. Those are uci "config"
@@ -53,11 +53,22 @@ class EUci(Uci):
         dtype: data type to be returned. Currently supported are: str, bool and
             int. If you don't specify this then it defaults to str. If value
             cannot be converted to specified type then it raises ValueError.
+        default: default value to be returned instead of raising
+            UciExceptionNotFound.
 
         When requested value is not found then this raises UciExceptionNotFound.
         """
-        dtype = kwargs.get('dtype', str)
-        value = super().get(*args)
+        kwdiff = set(kwargs).difference({'default'})
+        if kwdiff:
+            raise TypeError("'{}' is an invalid keyword argument for this function".format(kwdiff))
+
+        try:
+            value = super().get(*args)
+        except UciExceptionNotFound:
+            if 'default' not in kwargs:
+                raise
+            value = str(kwargs['default'])
+
         if dtype == str:
             return value
         if dtype == bool:
@@ -67,7 +78,7 @@ class EUci(Uci):
             return self.__BOOLEAN_VALUES[value]
         if dtype == int:
             return int(value)
-        raise EUciExceptionUnsupportedType(dtype)
+        raise TypeError("'{}' is not supported type of data".format(dtype))
 
     def set(self, *args, **kwargs):
         """Set configuration value.
@@ -85,6 +96,10 @@ class EUci(Uci):
         ensure correct type. That is in case of boolean for example:
         set("foo", "fee", "faa", bool(value))
         """
+        kwdiff = set(kwargs).difference({})
+        if kwdiff:
+            raise TypeError("'{}' is an invalid keyword argument for this function".format(kwdiff))
+
         dtype = type(args[-1])
         if dtype == bool:
             value = self.__BOOLEAN_TRUE if args[-1] else self.__BOOLEAN_FALSE
@@ -92,15 +107,6 @@ class EUci(Uci):
             # This implements handler for str and int type as well as fallback
             value = str(args[-1])
         super().set(*args[:-1], value)
-
-    def get_default(self, *args, default=None, **kwargs):
-        """Wrap UCI get method with additional check for missing config value.
-        Returns default value if config value cannot be found.
-        """
-        try:
-            return self.get(*args, **kwargs)
-        except UciExceptionNotFound:
-            return default
 
     def get_boolean(self, *args, **kwargs):
         """This is obsolete! Please use instead: set(config, section, option, dtype=bool)
@@ -110,18 +116,6 @@ class EUci(Uci):
         ValueError is raised on any other value.
         """
         return self.get(*args, dtype=bool, **kwargs)
-
-    def get_boolean_default(self, *args, default=False, **kwargs):
-        """Returns given UCI config as a boolean.
-        Value '0', 'no', 'off', 'false' or 'disabled' is returned as False.
-        Value '1' , 'yes', 'on', 'true' or 'enabled' is returned as True.
-        ValueError is raised on any other value.
-        Returns default value as bool if config value cannot be found.
-        """
-        try:
-            return self.get_boolean(*args, **kwargs)
-        except UciExceptionNotFound:
-            return bool(default)
 
     def set_boolean(self, *args):
         """This is obsolete! Please use instead: set(config, section, option, value, bool(value))
@@ -136,31 +130,8 @@ class EUci(Uci):
         """
         return self.get(*args, dtype=int, **kwargs)
 
-    def get_integer_default(self, *args, default=0, **kwargs):
-        """Returns given UCI config as an integer.
-        Raises ValueError if config value can't be converted to int.
-        Returns default value as int if config value cannot be found.
-        """
-        try:
-            return self.get_integer(*args, **kwargs)
-        except UciExceptionNotFound:
-            return int(default)
-
     def set_integer(self, *args):
         """This is obsolete! Please use instead: set(config, section, option, value, int(value))
         Sets integer to given UCI config.
         """
         self.set(*args[:-1], int(args[-1]))
-
-
-class EUciException(UciException):
-    """Generic top level exception for EUci.
-    """
-
-
-class EUciExceptionUnsupportedType(EUciException):
-    """Requested type is not supported by EUci.
-    """
-
-    def __init__(self, dtype):
-        super().__init__("Requested type is not supported by EUci: {}".format(dtype))
