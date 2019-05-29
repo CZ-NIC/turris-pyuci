@@ -100,3 +100,81 @@ config testing 'testing'
     with euci.EUci(confdir=tmpdir.strpath) as u:
         assert not u.get_boolean('test', 'testing', 'one')
         assert u.get_boolean('test', 'testing', 'two')
+
+
+def test_get_t_string(tmpdir):
+    'Test get_t method for str type'
+    tmpdir.join('test').write("""
+config str 'str'
+    option foo 'value'
+""")
+    u = euci.EUci(confdir=tmpdir.strpath)
+    v = u.get_t(str, 'test', 'str', 'foo')
+    assert type(v) == str
+    assert v == 'value'
+
+
+def test_get_t_boolean(tmpdir):
+    'Test get_t method for boolean type'
+    tmpdir.join('test').write("""
+config bool 'bool'
+    option true 'true'
+    option false 'false'
+""")
+    u = euci.EUci(confdir=tmpdir.strpath)
+    v1 = u.get_t(bool, 'test', 'bool', 'true')
+    assert type(v1) == bool
+    assert v1
+    v2 = u.get_t(bool, 'test', 'bool', 'false')
+    assert type(v2) == bool
+    assert not v2
+
+
+def test_get_t_int(tmpdir):
+    'Test get_t method for int type'
+    tmpdir.join('test').write("""
+config integer 'integer'
+    option plus '42'
+    option minus '-42'
+""")
+    u = euci.EUci(confdir=tmpdir.strpath)
+    v1 = u.get_t(int, 'test', 'integer', 'plus')
+    assert v1 == 42
+    assert type(v1) == int
+    v2 = u.get_t(int, 'test', 'integer', 'minus')
+    assert v2 == -42
+    assert type(v2) == int
+
+
+def test_set_t(tmpdir):
+    'Test set_integer'
+    tmpdir.join('test').write("""
+config testing 'testing'
+""")
+    u = euci.EUci(savedir=tmpdir.mkdir('save').strpath, confdir=tmpdir.strpath)
+    u.set_t('test', 'testing', 'foo', 'value')
+    assert u.get('test', 'testing', 'foo') == 'value'
+
+
+def test_set_t_boolean(tmpdir):
+    'Test set_t method for bool type'
+    tmpdir.join('test').write("""
+config testing 'testing'
+""")
+    u = euci.EUci(savedir=tmpdir.mkdir('save').strpath, confdir=tmpdir.strpath)
+    u.set_t('test', 'testing', 'true', True)
+    u.set_t('test', 'testing', 'false', False)
+    assert u.get('test', 'testing', 'true') == '1'
+    assert u.get('test', 'testing', 'false') == '0'
+
+
+def test_set_t_integer(tmpdir):
+    'Test set_integer'
+    tmpdir.join('test').write("""
+config testing 'testing'
+""")
+    u = euci.EUci(savedir=tmpdir.mkdir('save').strpath, confdir=tmpdir.strpath)
+    u.set_t('test', 'testing', 'plus', 42)
+    u.set_t('test', 'testing', 'minus', -42)
+    assert u.get('test', 'testing', 'plus') == '42'
+    assert u.get('test', 'testing', 'minus') == '-42'
