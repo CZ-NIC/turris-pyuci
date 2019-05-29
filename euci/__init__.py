@@ -108,6 +108,8 @@ class EUci(Uci):
             value = str(args[-1])
         super().set(*args[:-1], value)
 
+    # Following methods are obsolete and should not be exnteded nor used in new code #
+
     def get_boolean(self, *args, **kwargs):
         """This is obsolete! Please use instead: set(config, section, option, dtype=bool)
         Returns given UCI config as a boolean.
