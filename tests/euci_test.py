@@ -23,9 +23,12 @@ def test_get_string(tmpdir):
     tmpdir.join('test').write("""
 config str 'str'
     option foo 'value'
+    list list 'value1'
+    list list 'value2'
 """)
     u = euci.EUci(confdir=tmpdir.strpath)
     assert u.get('test', 'str', 'foo') == 'value'
+    assert u.get('test', 'str', 'list') == ('value1', 'value2')
 
 
 def test_set_string(tmpdir):
@@ -35,7 +38,9 @@ config testing 'testing'
 """)
     u = euci.EUci(savedir=tmpdir.mkdir('save').strpath, confdir=tmpdir.strpath)
     u.set('test', 'testing', 'foo', 'value')
+    u.set('test', 'testing', 'list', ('f', 'o', 'o'))
     assert u.get('test', 'testing', 'foo') == 'value'
+    assert u.get('test', 'testing', 'list') == ('f', 'o', 'o')
 
 
 def test_get_boolean(tmpdir):
@@ -60,6 +65,12 @@ config bool 'bool'
 config bled 'bled'
     option true 'enabled'
     option false 'disabled'
+
+config list 'list'
+    list true '1'
+    list true 'yes'
+    list false '0'
+    list false 'no'
 """)
     u = euci.EUci(confdir=tmpdir.strpath)
     assert u.get('test', 'integer', 'true', dtype=bool)
@@ -67,11 +78,13 @@ config bled 'bled'
     assert u.get('test', 'state', 'true', dtype=bool)
     assert u.get('test', 'bool', 'true', dtype=bool)
     assert u.get('test', 'bled', 'true', dtype=bool)
+    assert u.get('test', 'list', 'true', dtype=bool) == (True, True)
     assert not u.get('test', 'integer', 'false', dtype=bool)
     assert not u.get('test', 'word', 'false', dtype=bool)
     assert not u.get('test', 'state', 'false', dtype=bool)
     assert not u.get('test', 'bool', 'false', dtype=bool)
     assert not u.get('test', 'bled', 'false', dtype=bool)
+    assert u.get('test', 'list', 'false', dtype=bool) == (False, False)
 
 
 def test_set_boolean(tmpdir):
@@ -82,8 +95,10 @@ config testing 'testing'
     u = euci.EUci(savedir=tmpdir.mkdir('save').strpath, confdir=tmpdir.strpath)
     u.set('test', 'testing', 'true', True)
     u.set('test', 'testing', 'false', False)
+    u.set('test', 'testing', 'list', (True, False, True, False))
     assert u.get('test', 'testing', 'true') == '1'
     assert u.get('test', 'testing', 'false') == '0'
+    assert u.get('test', 'testing', 'list') == ('1', '0', '1', '0')
 
 
 def test_get_integer(tmpdir):
@@ -92,10 +107,15 @@ def test_get_integer(tmpdir):
 config integer 'integer'
     option plus '42'
     option minus '-42'
+    list primes '2'
+    list primes '3'
+    list primes '5'
+    list primes '7'
 """)
     u = euci.EUci(confdir=tmpdir.strpath)
     assert u.get('test', 'integer', 'plus', dtype=int) == 42
     assert u.get('test', 'integer', 'minus', dtype=int) == -42
+    assert u.get('test', 'integer', 'primes', dtype=int) == (2, 3, 5, 7)
 
 
 def test_set_integer(tmpdir):
@@ -106,8 +126,10 @@ config testing 'testing'
     u = euci.EUci(savedir=tmpdir.mkdir('save').strpath, confdir=tmpdir.strpath)
     u.set('test', 'testing', 'plus', 42)
     u.set('test', 'testing', 'minus', -42)
+    u.set('test', 'testing', 'primes', (2, 3, 5, 7))
     assert u.get('test', 'testing', 'plus') == '42'
     assert u.get('test', 'testing', 'minus') == '-42'
+    assert u.get('test', 'testing', 'primes') == ('2', '3', '5', '7')
 
 
 def test_get_default(tmpdir):

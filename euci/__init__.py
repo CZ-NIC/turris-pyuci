@@ -43,11 +43,28 @@ class EUci(Uci):
     __BOOLEAN_TRUE = "1"
     __BOOLEAN_FALSE = "0"
 
+    def _get(self, value, dtype):
+        if dtype == str:
+            return value
+        if dtype == bool:
+            value = value.lower()
+            if value not in self.__BOOLEAN_VALUES:
+                raise ValueError("invalid value '{}' for bool type".format(value))
+            return self.__BOOLEAN_VALUES[value]
+        if dtype == int:
+            return int(value)
+        raise TypeError("'{}' is not supported type of data".format(dtype))
+
     def get(self, *args, dtype=str, **kwargs):
         """Get configuration value.
 
         Up to three positional arguments are expected. Those are uci "config"
-        "section" and "option" in this order.
+        "section" and "option" in this order. "config" is the only one that is
+        really required.
+
+        Dictionary with all sections is returned when only "config" is
+        provided. If "section" and optionally also "option" is provided then it
+        returns single value or tuple of values in case of lists.
 
         Following additional optional keywords arguments are available:
         dtype: data type to be returned. Currently supported are: str, bool and
@@ -57,28 +74,31 @@ class EUci(Uci):
             UciExceptionNotFound.
 
         When requested value is not found then this raises UciExceptionNotFound.
+        ValueError is raised in case of value that can't be converted to dtype.
         """
         kwdiff = set(kwargs).difference({'default'})
         if kwdiff:
             raise TypeError("'{}' is an invalid keyword argument for this function".format(kwdiff))
 
         try:
-            value = super().get(*args)
+            values = super().get(*args)
         except UciExceptionNotFound:
             if 'default' not in kwargs:
                 raise
-            value = str(kwargs['default'])
+            values = kwargs['default']
+        if len(args) < 2:
+            # Only "config" was provided, values is dictionary and no conversion is provided.
+            return values
 
-        if dtype == str:
-            return value
+        if type(values) == tuple:
+            return tuple((self._get(str(value), dtype) for value in values))
+        return self._get(str(values), dtype)
+
+    def _set_value(self, value, dtype):
         if dtype == bool:
-            value = value.lower()
-            if value not in self.__BOOLEAN_VALUES:
-                raise ValueError
-            return self.__BOOLEAN_VALUES[value]
-        if dtype == int:
-            return int(value)
-        raise TypeError("'{}' is not supported type of data".format(dtype))
+            return self.__BOOLEAN_TRUE if value else self.__BOOLEAN_FALSE
+        # This implements handler for str and int type as well as fallback
+        return str(value)
 
     def set(self, *args, **kwargs):
         """Set configuration value.
@@ -101,12 +121,13 @@ class EUci(Uci):
             raise TypeError("'{}' is an invalid keyword argument for this function".format(kwdiff))
 
         dtype = type(args[-1])
-        if dtype == bool:
-            value = self.__BOOLEAN_TRUE if args[-1] else self.__BOOLEAN_FALSE
+        if dtype == tuple or dtype == list:
+            # We consider first value as authoritative for type
+            dtype = type(args[-1][0]) if args[-1] else str
+            super().set(*args[:-1], tuple(
+                (self._set_value(value, dtype) for value in args[-1])))
         else:
-            # This implements handler for str and int type as well as fallback
-            value = str(args[-1])
-        super().set(*args[:-1], value)
+            super().set(*args[:-1], self._set_value(args[-1], dtype))
 
     # Following methods are obsolete and should not be exnteded nor used in new code #
 
