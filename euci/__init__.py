@@ -84,7 +84,8 @@ class EUci(Uci):
         """
         kwdiff = set(kwargs).difference({'default', 'list'})
         if kwdiff:
-            raise TypeError("'{}' is an invalid keyword argument for this function".format(kwdiff))
+            raise TypeError("'{}' is an invalid keyword argument for this function"
+                            .format(next(iter(kwdiff))))
 
         try:
             values = super().get(*args)
@@ -114,7 +115,7 @@ class EUci(Uci):
         # This implements handler for str and int type as well as fallback
         return str(value)
 
-    def set(self, *args, **kwargs):
+    def set(self, *args):
         """Set configuration value.
 
         Up to three positional arguments specifying configuration can be
@@ -130,10 +131,6 @@ class EUci(Uci):
         ensure correct type. That is in case of boolean for example:
         set("foo", "fee", "faa", bool(value))
         """
-        kwdiff = set(kwargs).difference({})
-        if kwdiff:
-            raise TypeError("'{}' is an invalid keyword argument for this function".format(kwdiff))
-
         dtype = type(args[-1])
         if dtype == tuple or dtype == list:
             # We consider first value as authoritative for type
