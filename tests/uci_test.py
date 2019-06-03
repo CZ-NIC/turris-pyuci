@@ -1,19 +1,5 @@
-# Copyright 2018, CZ.NIC z.s.p.o. (http://www.nic.cz/)
-#
-# This file is part of the PyUCI.
-#
-# PyUCI is free software: you can redistribute it and/or modify
-# it under the terms of the GNU General Public License as published by
-# the Free Software Foundation, either version 3 of the License, or
-#  (at your option) any later version.
-#
-# PyUCI is distributed in the hope that it will be useful,
-# but WITHOUT ANY WARRANTY; without even the implied warranty of
-# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-# GNU General Public License for more details.
-#
-# You should have received a copy of the GNU General Public License
-# along with PyUCI.  If not, see <http://www.gnu.org/licenses/>.
+"""These are tests for uci package.
+"""
 import pytest
 import uci
 
@@ -23,20 +9,19 @@ def test_init():
     assert uci.Uci() is not None
 
 
-def test_get(tmpdir):
+def test_get(uci_setup):
     'Test get method. This depends on working test_init.'
-    tmpdir.join('test').write("""
-config testing 'testing'
-    option one '0'
-    option two '1'
-
-config testlist 'testlist'
-    list list1 '42'
-    list list2 'once'
-    list list2 'twice'
-    list list2 'thrice'
-""")
-    u = uci.Uci(confdir=tmpdir.strpath)
+    uci_setup.set('test', (
+        ("config", "testing", "testing"),
+        ("option", "one", "0"),
+        ("option", "two", "1"),
+        ("config", "testlist", "testlist"),
+        ("list", "list1", "42"),
+        ("list", "list2", "once"),
+        ("list", "list2", "twice"),
+        ("list", "list2", "thrice"),
+    ))
+    u = uci.Uci(confdir=uci_setup.confdir())
     assert u.get('test', 'testing') == 'testing'
     assert u.get('test', 'testing', 'one') == '0'
     assert u.get('test', 'testing', 'two') == '1'
@@ -44,39 +29,38 @@ config testlist 'testlist'
     assert u.get('test', 'testlist', 'list2') == ('once', 'twice', 'thrice')
 
 
-def test_set(tmpdir):
+def test_set(uci_setup):
     'Test set method. This depends on working test_get.'
-    tmpdir.join('test').write("")
-    u = uci.Uci(savedir=tmpdir.mkdir('save').strpath, confdir=tmpdir.strpath)
+    uci_setup.set('test', ())
+    u = uci.Uci(savedir=uci_setup.savedir(), confdir=uci_setup.confdir())
     u.set('test', 'testing', 'testing')
     u.set('test', 'testing', 'variable', 'value')
     assert u.get('test', 'testing') == 'testing'
     assert u.get('test', 'testing', 'variable') == 'value'
 
 
-def test_commit(tmpdir):
+def test_commit(uci_setup):
     'Test commit method. This depends on working test_set.'
-    cnf = tmpdir.join('test')
-    cnf.write("")
-    u = uci.Uci(savedir=tmpdir.mkdir('save').strpath, confdir=tmpdir.strpath)
+    uci_setup.set('test', ())
+    u = uci.Uci(savedir=uci_setup.savedir(), confdir=uci_setup.confdir())
     u.set('test', 'testing', 'testing')
     u.set('test', 'testing', 'variable', 'value')
+    assert uci_setup.get('test') == ()
     u.commit('test')
-    assert cnf.read() == """
-config testing 'testing'
-\toption variable 'value'
+    assert uci_setup.get('test') == (
+        ("config", "testing", "testing"),
+        ("option", "variable", "value"),
+    )
 
-"""
 
-
-def test_delete(tmpdir):
+def test_delete(uci_setup):
     'Test delete method. This depends on working test_get.'
-    tmpdir.join('test').write("""
-config testing 'testing'
-    option one '0'
-    option two '1'
-""")
-    u = uci.Uci(confdir=tmpdir.strpath)
+    uci_setup.set('test', (
+        ("config", "testing", "testing"),
+        ("option", "one", "0"),
+        ("option", "two", "1"),
+    ))
+    u = uci.Uci(confdir=uci_setup.confdir())
     u.delete('test', 'testing', 'one')
     assert u.get('test', 'testing', 'two') == '1'
     with pytest.raises(uci.UciExceptionNotFound):
@@ -88,14 +72,14 @@ config testing 'testing'
         u.get('test', 'testing')
 
 
-def test_rename(tmpdir):
-    'Test delete method. This depends on working test_get.'
-    tmpdir.join('test').write("""
-config testing 'testing'
-    option one '0'
-    option two '1'
-""")
-    u = uci.Uci(confdir=tmpdir.strpath)
+def test_rename(uci_setup):
+    'Test rename method. This depends on working test_get.'
+    uci_setup.set('test', (
+        ("config", "testing", "testing"),
+        ("option", "one", "0"),
+        ("option", "two", "1"),
+    ))
+    u = uci.Uci(confdir=uci_setup.confdir())
     u.rename('test', 'testing', 'one', 'three')
     with pytest.raises(uci.UciExceptionNotFound):
         u.get('test', 'testing', 'one')
@@ -109,48 +93,42 @@ config testing 'testing'
     assert u.get('test', 'deploy', 'two') == '1'
 
 
-def no_test_reorder(tmpdir):
-    'Test delete method. This depends on working test_commit.'
-    cnf = tmpdir.join('test')
-    cnf.write("""
-config testing 'testing'
-    option one '0'
-
-config deploy 'deploy'
-    option two '1'
-
-""")
-    u = uci.Uci(confdir=tmpdir.strpath)
+def no_test_reorder(uci_setup):
+    'Test reorder method. This depends on working test_commit.'
+    uci_setup.set('test', (
+        ("config", "testing", "testing"),
+        ("option", "two", "1"),
+        ("config", "deploy", "deploy"),
+        ("option", "one", "0"),
+    ))
+    u = uci.Uci(confdir=uci_setup.confdir())
     u.reorder('test', 'testing', 1)
     u.commit('test')
-    assert cnf.read() == """
-config deploy 'deploy'
-\toption two '1'
-
-config testing 'testing'
-\toption one '0'
-
-"""
+    assert uci_setup.get('test') == (
+        ("config", "deploy", "deploy"),
+        ("option", "one", "0"),
+        ("config", "testing", "testing"),
+        ("option", "two", "1"),
+    )
 
 
-def test_save(tmpdir):
+def test_save(uci_setup):
     'Test save method. This depends on working test_set.'
-    sf = tmpdir.mkdir('save')
-    cnf = tmpdir.mkdir('conf')
-    cnf.join('test').write("")
-    u = uci.Uci(savedir=sf.strpath, confdir=cnf.strpath)
+    uci_setup.set('test', ())
+    u = uci.Uci(savedir=uci_setup.savedir(), confdir=uci_setup.confdir())
     u.set('test', 'testing', 'testing')
     u.set('test', 'testing', 'variable', 'value')
     u.save('test')
-    assert sf.join('test').read() == """test.testing='testing'
-test.testing.variable='value'
-"""
+    assert uci_setup.get_save('test') == (
+        ("test.testing", "testing"),
+        ("test.testing.variable", "value"),
+    )
 
 
-def test_revert(tmpdir):
+def test_revert(uci_setup):
     'Test revert method. This depends on working test_set.'
-    tmpdir.join('test').write("")
-    u = uci.Uci(confdir=tmpdir.strpath)
+    uci_setup.set('test', ())
+    u = uci.Uci(confdir=uci_setup.confdir())
     u.set('test', 'testing', 'testing')
     u.set('test', 'testing', 'variable', 'value')
     assert u.get('test', 'testing', 'variable') == 'value'
@@ -159,35 +137,35 @@ def test_revert(tmpdir):
         u.get('test', 'testing', 'variable')
 
 
-def test_list_configs(tmpdir):
+def test_list_configs(uci_setup):
     'Test list_configs method.'
-    tmpdir.join('test').write("")
-    tmpdir.join('deploy').write("")
-    u = uci.Uci(confdir=tmpdir.strpath)
+    uci_setup.set('test', ())
+    uci_setup.set('deploy', ())
+    u = uci.Uci(confdir=uci_setup.confdir())
     assert u.list_configs() == ['deploy', 'test']
 
 
-def test_context(tmpdir):
+def test_context(uci_setup):
     'Test context with Uci. This depends on working test_get.'
-    tmpdir.join('test').write("""
-config testing 'testing'
-    option one '0'
-    option two '1'
-""")
-    with uci.Uci(confdir=tmpdir.strpath) as u:
+    uci_setup.set('test', (
+        ("config", "testing", "testing"),
+        ("option", "one", "0"),
+        ("option", "two", "1"),
+    ))
+    with uci.Uci(confdir=uci_setup.confdir()) as u:
         assert u.get('test', 'testing', 'one') == '0'
         assert u.get('test', 'testing', 'two') == '1'
 
 
-def test_context_commit(tmpdir):
+def test_context_commit(uci_setup):
     """Test that when we leave context that we commit. This depends on working
     test_set.
     """
-    tmpdir.join('test').write("")
-    with uci.Uci(confdir=tmpdir.strpath) as u:
+    uci_setup.set('test', ())
+    with uci.Uci(confdir=uci_setup.confdir()) as u:
         u.set('test', 'testing', 'testing')
         u.set('test', 'testing', 'one', '0')
         u.set('test', 'testing', 'two', '1')
-    with uci.Uci(confdir=tmpdir.strpath) as u:
+    with uci.Uci(confdir=uci_setup.confdir()) as u:
         assert u.get('test', 'testing', 'one') == '0'
         assert u.get('test', 'testing', 'two') == '1'
