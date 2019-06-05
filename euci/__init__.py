@@ -22,7 +22,8 @@
 # LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
 # NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE,
 # EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-from uci import Uci, UciException, UciExceptionNotFound
+import collections
+from uci import Uci, UciExceptionNotFound
 
 
 class EUci(Uci):
@@ -131,14 +132,13 @@ class EUci(Uci):
         ensure correct type. That is in case of boolean for example:
         set("foo", "fee", "faa", bool(value))
         """
-        dtype = type(args[-1])
-        if dtype == tuple or dtype == list:
+        if isinstance(args[-1], collections.Iterable) and not isinstance(args[-1], str):
             # We consider first value as authoritative for type
             dtype = type(args[-1][0]) if args[-1] else str
             super().set(*args[:-1], tuple(
                 (self._set_value(value, dtype) for value in args[-1])))
         else:
-            super().set(*args[:-1], self._set_value(args[-1], dtype))
+            super().set(*args[:-1], self._set_value(args[-1], type(args[-1])))
 
     # Following methods are obsolete and should not be exnteded nor used in new code #
 
