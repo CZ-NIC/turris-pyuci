@@ -4,6 +4,7 @@ stages:
   - test
   - pages
 
+
 unittests:
   stage: test
   before_script:
@@ -18,13 +19,19 @@ unittests:
       cobertura: coverage.xml
   coverage: /^TOTAL.*\s+([^\s]+)%$/
 
-# Let's generate coverage only using Python3
+unittests_monkey:
+  stage: test
+  script:
+    - python3 -m pytest -M tests
+
+
 pages:
   stage: pages
   before_script:
     - COVERAGE=y python3 setup.py install
     - export LD_LIBRARY_PATH=/usr/local/lib
     - python3 -m pytest tests
+    - python3 -m pytest -M tests
   script:
     - lcov --capture --no-external --base-directory . --directory build/temp.* --output-file coverage.info
     - genhtml coverage.info --output-directory public/coverage-c

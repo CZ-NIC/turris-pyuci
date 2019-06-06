@@ -1,25 +1,22 @@
 """Mockup of Unified configuration interface bindings
 """
-import os
 import sys
 import pytest
 from . import uci
 
 
 def uci_monkeypatch():
-    """Set uci from uci_monkey as prefered one.
+    """Set uci from uci_monkey as uci module
     """
-    _sysdir_uci = os.path.dirname(__file__)
-    if _sysdir_uci not in sys.path:
-        sys.path.insert(0, _sysdir_uci)
+    sys.modules["uci"] = uci
 
 
 @pytest.fixture
-def fake_uci():
+def uci_fake():
     """Fixture to provide you with faked uci state. You can use it to set and
     verify UCI state.
     """
     from . import guts
-    state = guts.UciState()
-    yield state
-    state.wipe()
+    uci.current_state = guts.UciState()
+    yield uci.current_state
+    uci.current_state = None

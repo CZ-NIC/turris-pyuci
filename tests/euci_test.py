@@ -18,6 +18,7 @@ import pytest
 import euci
 
 from ipaddress import IPv4Address, IPv6Address
+pytestmark = pytest.mark.uci_real  # TODO for now
 
 
 def test_get_string(uci_setup):

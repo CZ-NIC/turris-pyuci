@@ -3,6 +3,8 @@
 import pytest
 import uci
 
+pytestmark = pytest.mark.uci_real  # TODO for now
+
 
 def test_init():
     'Test class __init__ and __del__'

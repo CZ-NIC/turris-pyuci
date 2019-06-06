@@ -1,87 +1,134 @@
 """Unified configuration interface bindings
 """
-import threading
+import os
+import string
+import random
+import collections
 
-_state = None
-_state_lock = threading.Lock()
+current_state = None
 
 
 class Uci():
     """Top level entry point to uci context. Create instance of this for any
     uci access
     """
+    _ANONYM_CONF_LEN = 6
 
     def __init__(self, savedir=None, confdir=None):
-        self.tainted = False
+        self._anonym_sections = set()
+        self._tainted = False
+        self.set_savedir("/tmp/.uci" if savedir is None else savedir)
+        self.set_confdir("/etc/config" if confdir is None else confdir)
 
     def __enter__(self):
         return self
 
     def __exit__(self, type, value, traceback):
-        if self.tainted:
+        if self._tainted:
             for config in self.list_configs():
                 self.commit(config)
 
-    def get(self, *args):
+    def _anonym_section_name(self):
+        """Generates new name for anonymous sections.
+        """
+        value = ''.join(random.choices(string.ascii_lowercase + string.digits, k=self._ANONYM_CONF_LEN))
+        if value in self._anonym_sections:
+            return self._anonym_section_name()
+        self._anonym_sections.add(value)
+        return "cfg" + value
+
+    def _get(self, section_value, *args):
+        argc = len(args)
+        if argc == 1:
+            # TODO go trough all sections in config
+            raise NotImplementedError
+        if args == 2:
+            if section_value:
+                path = self._path(*args)
+            else:
+                # TODO go trough all options and lists
+                raise NotImplementedError
+
+    def _path(self, *args):
+        """Generic convertor from arguments to dot separated path"""
         raise NotImplementedError
+
+    def get(self, *args):
+        """Get value"""
+        return self._get(True, *args)
 
     def get_all(self, *args):
-        raise NotImplementedError
+        """Get all values even for sections"""
+        return self._get(False, *args)
 
     def set(self, *args):
-        self.tainted = True
-        raise NotImplementedError
+        """Set value"""
+        current_state[self._savedir][self._path(*args[:-1])] = str(args[-1])
+        self._tainted = True
 
     def delete(self, *args):
-        self.tainted = True
-        raise NotImplementedError
+        """Delete option"""
+        path = self._path(*args)
+        ucidir = current_state[self._savedir]
+        if path in ucidir:
+            del ucidir[path]
+            self._tainted = True
 
     def add(self, *args):
-        self.tainted = True
+        """Add new anonymous section"""
+        # This is not implemented in pyuci yet.
+        self._tainted = True
         raise NotImplementedError
 
     def rename(self, *args):
-        self.tainted = True
-        raise NotImplementedError
+        """Rename an element"""
+        path = self._path(*args)
+        ucidir = current_state[self._savedir]
+        if path in ucidir:
+            ucidir[path] = ucidir.pop(path)
+            self._tainted = True
 
     def reorder(self, *args):
-        self.tainted = True
+        self._tainted = True
         raise NotImplementedError
 
     def save(self, *args):
         raise NotImplementedError
 
     def commit(self, *args):
+        self._tainted = False
         raise NotImplementedError
-        self.tainted = False
 
     def revert(self, *args):
+        self._tainted = False
         raise NotImplementedError
-        self.tainted = False
 
     def unload(self, *args):
+        # This is not implemented in pyuci yet.
         raise NotImplementedError
 
     def load(self, *args):
+        # This is not implemented in pyuci yet.
         raise NotImplementedError
 
     def changes(self, *args):
+        # This is not implemented in pyuci yet.
         raise NotImplementedError
 
     def list_configs(self):
         raise NotImplementedError
 
     def confdir(self):
-        raise NotImplementedError
+        return self._confdir
 
     def set_confdir(self, path):
-        raise NotImplementedError
+        self._confdir = os.path.normpath(path).rstrip('/')
 
     def savedir(self):
-        raise NotImplementedError
+        return self._savedir
 
     def set_savedir(self, path):
-        raise NotImplementedError
+        self._savedir = os.path.normpath(path).rstrip('/')
 
 
 class UciException(Exception):
