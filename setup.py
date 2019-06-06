@@ -11,7 +11,7 @@ if 'COVERAGE' in os.environ:
 
 setup(
     name='pyuci',
-    version='0.5',
+    version='0.6',
     author='CZ.NIC z.s.p.o',
     author_email='karel.koci@nic.cz',
     description='Python Uci bindings',
