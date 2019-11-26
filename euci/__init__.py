@@ -26,6 +26,12 @@ import collections
 from uci import Uci, UciExceptionNotFound
 
 
+def _is_iter(data):
+    """Check if data is instance of iterable with exclusion of string as the only standard iterable type we handle.
+    """
+    return isinstance(data, collections.Iterable) and not isinstance(data, str)
+
+
 class EUci(Uci):
     """Extended Uci wrapper
     """
@@ -98,7 +104,7 @@ class EUci(Uci):
             # Only "config" was provided, values is dictionary and no conversion is provided.
             return values
 
-        if type(values) == tuple:
+        if _is_iter(values):
             result = tuple((self._get(str(value), dtype) for value in values))
         else:
             result = self._get(str(values), dtype)
@@ -132,7 +138,7 @@ class EUci(Uci):
         ensure correct type. That is in case of boolean for example:
         set("foo", "fee", "faa", bool(value))
         """
-        if isinstance(args[-1], collections.Iterable) and not isinstance(args[-1], str):
+        if _is_iter(args[-1]):
             # We consider first value as authoritative for type
             dtype = type(args[-1][0]) if args[-1] else str
             super().set(*args[:-1], tuple(
