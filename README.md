@@ -182,6 +182,10 @@ and provide additional behavior on top of `Uci`.
 * __int__: non-standard type for integers. String representations as defined by
   Python are supported. `EUci` saves integers as decimal numbers.
 
+#### euci.bolean.VALUES
+This is dictionary mapping boolean strings to `True` or `False`.
+Useful when getting whole config section and processing options individually.
+
 #### euci.get(config, section, option, dtype=str, default=?, list=?)
 This is overloaded `uci.get` method. Three initial positional arguments are same
 as in case of `uci.get` but behavior changes depending on additional keyword
