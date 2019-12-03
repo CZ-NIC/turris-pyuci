@@ -24,6 +24,7 @@
 # EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 import collections
 from uci import Uci, UciExceptionNotFound
+from . import boolean
 
 
 def _is_iter(data):
@@ -35,29 +36,16 @@ def _is_iter(data):
 class EUci(Uci):
     """Extended Uci wrapper
     """
-    __BOOLEAN_VALUES = {
-        "0": False,
-        "no": False,
-        "off": False,
-        "false": False,
-        "disabled": False,
-        "1": True,
-        "yes": True,
-        "on": True,
-        "true": True,
-        "enabled": True,
-    }
-    __BOOLEAN_TRUE = "1"
-    __BOOLEAN_FALSE = "0"
 
-    def _get(self, value, dtype):
+    @staticmethod
+    def _get(value, dtype):
         if dtype == str:
             return value
         if dtype == bool:
             value = value.lower()
-            if value not in self.__BOOLEAN_VALUES:
+            if value not in boolean.VALUES:
                 raise ValueError("invalid value '{}' for bool type".format(value))
-            return self.__BOOLEAN_VALUES[value]
+            return boolean.VALUES[value]
         if dtype == int:
             return int(value)
         raise TypeError("'{}' is not supported type of data".format(dtype))
@@ -109,16 +97,17 @@ class EUci(Uci):
         else:
             result = self._get(str(values), dtype)
         if 'list' in kwargs:
-            if (type(result) == tuple) == bool(kwargs['list']):
+            if isinstance(result, tuple) == bool(kwargs['list']):
                 return result
             if kwargs['list']:
                 return (result,)
             return result[0]
         return result
 
-    def _set_value(self, value, dtype):
+    @staticmethod
+    def _set_value(value, dtype):
         if dtype == bool:
-            return self.__BOOLEAN_TRUE if value else self.__BOOLEAN_FALSE
+            return boolean.TRUE if value else boolean.FALSE
         # This implements handler for str and int type as well as fallback
         return str(value)
 
