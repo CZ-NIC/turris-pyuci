@@ -1,4 +1,4 @@
-# Copyright 2019, CZ.NIC z.s.p.o. (http://www.nic.cz/)
+# Copyright 2020, CZ.NIC z.s.p.o. (http://www.nic.cz/)
 #
 # This file is part of the PyUCI.
 #
@@ -16,6 +16,8 @@
 # along with PyUCI.  If not, see <http://www.gnu.org/licenses/>.
 import pytest
 import euci
+
+from ipaddress import IPv4Address, IPv6Address
 
 
 def test_get_string(tmpdir):
@@ -172,3 +174,28 @@ config testing 'testing'
     assert not u.get('test', 'testing', 'option', dtype=bool, list=False)
     assert u.get('test', 'testing', 'list', dtype=bool, list=True) == (False, True)
     assert not u.get('test', 'testing', 'list', dtype=bool, list=False)
+
+
+def test_ip_address_type(tmpdir):
+    'Test ip address type'
+    tmpdir.join('test').write(
+        """
+config testing 'testing'
+    option option '0'
+    option one '192.168.1.1'
+    option two '::1'
+    list three '::2'
+    list three '10.0.0.1'
+"""
+    )
+    with euci.EUci(confdir=tmpdir.strpath) as u:
+        assert u.get('test', 'testing', 'one', dtype=IPv4Address) == IPv4Address('192.168.1.1')
+        assert u.get('test', 'testing', 'one', dtype=IPv6Address) == IPv4Address('192.168.1.1')
+        assert u.get('test', 'testing', 'two', dtype=IPv4Address) == IPv6Address('::1')
+        assert u.get('test', 'testing', 'two', dtype=IPv6Address) == IPv6Address('::1')
+        assert u.get('test', 'testing', 'three', dtype=IPv4Address, list=True) == (
+            IPv6Address('::2'), IPv4Address('10.0.0.1')
+        )
+        assert u.get('test', 'testing', 'three', dtype=IPv6Address, list=True) == (
+            IPv6Address('::2'), IPv4Address('10.0.0.1')
+        )

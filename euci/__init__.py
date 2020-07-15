@@ -1,4 +1,4 @@
-# Copyright (c) 2019, CZ.NIC, z.s.p.o. (http://www.nic.cz/)
+# Copyright (c) 2020, CZ.NIC, z.s.p.o. (http://www.nic.cz/)
 # All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
@@ -23,6 +23,7 @@
 # NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE,
 # EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 import collections
+import ipaddress
 from uci import Uci, UciExceptionNotFound
 from . import boolean
 
@@ -41,13 +42,15 @@ class EUci(Uci):
     def _get(value, dtype):
         if dtype == str:
             return value
-        if dtype == bool:
+        elif dtype == bool:
             value = value.lower()
             if value not in boolean.VALUES:
                 raise ValueError("invalid value '{}' for bool type".format(value))
             return boolean.VALUES[value]
-        if dtype == int:
+        elif dtype == int:
             return int(value)
+        elif dtype in (ipaddress.IPv4Address, ipaddress.IPv6Address):
+            return ipaddress.ip_address(value)
         raise TypeError("'{}' is not supported type of data".format(dtype))
 
     def get(self, *args, dtype=str, **kwargs):
