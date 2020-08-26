@@ -8,9 +8,15 @@ unittests:
   stage: test
   before_script:
     - pip3 install .
+    - pip3 install pytest-cov  # This can be removed once base image is updated
     - export LD_LIBRARY_PATH=/usr/local/lib
   script:
-    - python3 -m pytest tests
+    - python3 -m pytest -v --junitxml=report.xml --cov-report xml:coverage.xml --cov-report term --cov=euci tests
+  artifacts:
+    reports:
+      junit: report.xml
+      cobertura: coverage.xml
+  coverage: /^TOTAL.*\s+([^\s]+)%$/
 
 # Let's generate coverage only using Python3
 pages:

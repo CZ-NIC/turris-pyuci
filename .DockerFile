@@ -36,7 +36,7 @@ RUN \
   apt-get -y install --no-install-recommends \
     python-dev python-setuptools python-pip python-pytest \
     python3-dev python3-setuptools python3-pip python3-pytest \
-    lcov \
+    python3-pytest-cov lcov \
     && \
   apt-get clean
 
