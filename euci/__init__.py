@@ -24,6 +24,7 @@
 # EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 import collections
 import ipaddress
+
 from uci import Uci, UciExceptionNotFound
 from . import boolean
 
@@ -31,7 +32,7 @@ from . import boolean
 def _is_iter(data):
     """Check if data is instance of iterable with exclusion of string as the only standard iterable type we handle.
     """
-    return isinstance(data, collections.Iterable) and not isinstance(data, str)
+    return isinstance(data, collections.abc.Iterable) and not isinstance(data, str)
 
 
 class EUci(Uci):
