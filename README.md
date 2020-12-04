@@ -181,6 +181,8 @@ and provide additional behavior on top of `Uci`.
   is considered as invalid. `EUci` uses `0` and `1` if it sets this type.
 * __int__: non-standard type for integers. String representations as defined by
   Python are supported. `EUci` saves integers as decimal numbers.
+* __ipaddress__: instances of `ipaddress.IPv4Address` and `ipaddress.IPv6Address`.
+  Supports string representations supported by `iptaddress.ip_address()`.
 
 #### euci.bolean.VALUES
 This is dictionary mapping boolean strings to `True` or `False`.
